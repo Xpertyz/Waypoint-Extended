@@ -1,5 +1,8 @@
 # Waypoint - Automatic Table of Contents Generator for [Obsidian.md](https://obsidian.md/)
 
+> [!IMPORTANT]
+> This is a modified version of [Waypoint by IdreesInc](https://github.com/idreesinc/Waypoint).
+
 Do you use folders to categorize your notes and wish that Obsidian would show certain folders in the graph view? Do you hate having to keep track of tags and links every time a file is created? Do you want to decide what folders should be categories without creating index files for every folder?
 
 Waypoint is an Obsidian plugin that automatically generates tables of contents/MOCs within your folder notes. Once a waypoint is generated, it'll automatically link to every note within the folder and its subfolders. The Waypoint plugin will detect when you create/rename/move/delete a note and automatically stay up-to-date. **No more dealing with loads of tags or manually updating your own content maps!**

@@ -31,6 +31,23 @@ _Note: Waypoint development is currently focused on maintenance rather than addi
 	- Unlike other plugins, Waypoints are generated and saved as real markdown text within your folder notes. If you decide to switch to a different markdown editor that supports [[links]], all of your tables of contents will still be usable.
 	- Note that the Waypoint plugin currently only works with Obsidian, so moving files around in another editor will cause your waypoints to be out-of-date.
 
+## Custom Output Templates
+
+You can customize how each generated entry is rendered by changing the Output Template setting. The template uses simple placeholder replacement and leaves unknown placeholders unchanged.
+
+Available placeholders:
+- `{{path}}`
+- `{{name}}`
+- `{{folder}}`
+- `{{extension}}`
+- `{{index}}`
+
+Examples:
+- `[[{{name}}]]`
+- `![[{{path}}]]`
+- `### {{name}}`
+- `<details><summary>{{name}}</summary>\n\n![[{{path}}]]\n\n</details>`
+
 ## How To Use
 
 - First, install the plugin. Waypoint is currently being reviewed for inclusion in the Community Plugins list. Once it is accepted, you'll be able to install it directly within Obsidian.

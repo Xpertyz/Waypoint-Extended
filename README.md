@@ -49,7 +49,6 @@ Examples:
 - `[[{{name}}]]`
 - `![[{{path}}]]`
 - `### {{name}}`
-- `<details><summary>{{name}}</summary>\n\n![[{{path}}]]\n\n</details>`
 
 ## How To Use
 

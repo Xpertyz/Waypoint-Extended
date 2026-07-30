@@ -227,14 +227,15 @@ export default class Waypoint extends Plugin {
 	 */
 	async updateWaypoint(file: TFile, flagType: WaypointType) {
 		this.log("Updating " + flagType + " in " + file.path);
+		const outputTemplate = this.getOutputTemplate(file);
 		let fileTree = "";
 		if (this.settings.folderNoteType === FolderNoteType.InsideFolder || this.settings.folderNoteType === FolderNoteType.CustomFilename) {
-			const tree = await this.getFileTreeRepresentation(file.parent, file.parent, 0, true);
+			const tree = await this.getFileTreeRepresentation(file.parent, file.parent, 0, true, 1, outputTemplate);
 			fileTree = tree.text;
 		} else {
 			const folder = this.app.vault.getAbstractFileByPath(this.getCleanParentPath(file) + file.basename);
 			if (folder instanceof TFolder) {
-				const tree = await this.getFileTreeRepresentation(file.parent, folder, 0, true);
+				const tree = await this.getFileTreeRepresentation(file.parent, folder, 0, true, 1, outputTemplate);
 				fileTree = tree.text;
 			}
 		}
@@ -296,6 +297,20 @@ export default class Waypoint extends Plugin {
 		return undefined;
 	}
 
+	private getOutputTemplate(file: TFile): string {
+		const frontmatter = this.app.metadataCache?.getFileCache(file)?.frontmatter as Record<string, unknown> | undefined;
+		if (frontmatter) {
+			for (const key of ["waypoint-output-template", "waypointOutputTemplate", "waypointTemplate"]) {
+				const value = frontmatter[key];
+				if (typeof value === "string" && value.trim() !== "") {
+					this.log(`Found frontmatter output template for ${file.path}: ${value}`);
+					return value;
+				}
+			}
+		}
+		return this.settings.outputTemplate;
+	}
+
 	private getTemplateContext(node: TAbstractFile, index: number, prefix: string, content: string): { path: string; name: string; folder: string; extension: string; index: number; prefix?: string; content?: string } {
 		const name = node instanceof TFile ? node.basename : node.name;
 		return {
@@ -309,8 +324,8 @@ export default class Waypoint extends Plugin {
 		};
 	}
 
-	private renderTemplateForNode(node: TAbstractFile, index: number, prefix: string, content: string): string {
-		return renderTemplate(this.settings.outputTemplate, this.getTemplateContext(node, index, prefix, content));
+	private renderTemplateForNode(node: TAbstractFile, index: number, prefix: string, content: string, outputTemplate: string = this.settings.outputTemplate): string {
+		return renderTemplate(outputTemplate, this.getTemplateContext(node, index, prefix, content));
 	}
 
 	/**
@@ -321,7 +336,7 @@ export default class Waypoint extends Plugin {
 	 * @param topLevel Whether this is the top level of the tree or not
 	 * @returns The string representation of the tree, or null if the node is not a file or folder
 	 */
-	async getFileTreeRepresentation(rootNode: TFolder, node: TAbstractFile, indentLevel: number, topLevel = false, startIndex = 1): Promise<{ text: string; nextIndex: number }> {
+	async getFileTreeRepresentation(rootNode: TFolder, node: TAbstractFile, indentLevel: number, topLevel = false, startIndex = 1, outputTemplate: string = this.settings.outputTemplate): Promise<{ text: string; nextIndex: number }> {
 		const indent = this.settings.useSpaces ? " ".repeat(this.settings.numSpaces) : "\t";
 		const bullet = indent.repeat(indentLevel) + "-";
 		if (!(node instanceof TFile) && !(node instanceof TFolder)) {
@@ -363,7 +378,7 @@ export default class Waypoint extends Plugin {
 			if (content === "") {
 				return { text: "", nextIndex: startIndex + 1 };
 			}
-			const renderedEntry = this.renderTemplateForNode(node, startIndex, bullet, content);
+			const renderedEntry = this.renderTemplateForNode(node, startIndex, bullet, content, outputTemplate);
 			return { text: renderedEntry, nextIndex: startIndex + 1 };
 		}
 		let text = "";
@@ -392,19 +407,19 @@ export default class Waypoint extends Plugin {
 				}
 				if (!topLevel) {
 					if (this.settings.stopScanAtFolderNotes) {
-						return { text: this.renderTemplateForNode(node, currentIndex, bullet, folderEntryContent), nextIndex: currentIndex + 1 };
+						return { text: this.renderTemplateForNode(node, currentIndex, bullet, folderEntryContent, outputTemplate), nextIndex: currentIndex + 1 };
 					}
 					const content = await this.app.vault.cachedRead(folderNote);
 					if (content.includes(Waypoint.BEGIN_WAYPOINT) || content.includes(this.settings.waypointFlag)) {
-						return { text: this.renderTemplateForNode(node, currentIndex, bullet, folderEntryContent), nextIndex: currentIndex + 1 };
+						return { text: this.renderTemplateForNode(node, currentIndex, bullet, folderEntryContent, outputTemplate), nextIndex: currentIndex + 1 };
 					}
 				}
 			}
-			text = this.renderTemplateForNode(node, currentIndex, bullet, folderEntryContent);
+			text = this.renderTemplateForNode(node, currentIndex, bullet, folderEntryContent, outputTemplate);
 			currentIndex += 1;
 		}
 		if (!node.children || node.children.length == 0) {
-			return { text: text === "" ? this.renderTemplateForNode(node, currentIndex, bullet, `**${node.name}**`) : text, nextIndex: currentIndex + 1 };
+			return { text: text === "" ? this.renderTemplateForNode(node, currentIndex, bullet, `**${node.name}**`, outputTemplate) : text, nextIndex: currentIndex + 1 };
 		}
 		let children = node.children;
 		children = children.sort((a, b) => {
@@ -438,7 +453,7 @@ export default class Waypoint extends Plugin {
 
 			const childLines: string[] = [];
 			for (const child of children) {
-				const childResult = await this.getFileTreeRepresentation(rootNode, child, nextIndentLevel, false, currentIndex);
+				const childResult = await this.getFileTreeRepresentation(rootNode, child, nextIndentLevel, false, currentIndex, outputTemplate);
 				currentIndex = childResult.nextIndex;
 				if (childResult.text) {
 					childLines.push(childResult.text);

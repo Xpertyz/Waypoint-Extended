@@ -38,6 +38,16 @@ _Note: Waypoint development is currently focused on maintenance rather than addi
 
 You can customize how each generated entry is rendered by changing the Output Template setting. The template uses simple placeholder replacement and leaves unknown placeholders unchanged.
 
+You can also override the template per note through YAML frontmatter. This is useful when a single folder note should use a different layout from the global setting. The supported keys are `waypoint-output-template`, `waypointOutputTemplate`, and `waypointTemplate`.
+
+Example:
+
+```yaml
+---
+waypoint-output-template: "- [{{name}}]({{path}})"
+---
+```
+
 Available placeholders:
 - `{{path}}`
 - `{{name}}`
